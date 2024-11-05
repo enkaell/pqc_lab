@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.28.3
-// source: pqc_lab.proto
+// source: server.proto
 
-package pqc_lab
+package server
 
 import (
 	context "context"
@@ -198,5 +198,5 @@ var AlgorithmService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "pqc_lab.proto",
+	Metadata: "server.proto",
 }

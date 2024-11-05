@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "/pqc_lab";
+option go_package = "/server";
 import "google/protobuf/empty.proto";
 
 // Main communication models
