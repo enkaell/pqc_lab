@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+option go_package = "/pqc_lab";
+import "google/protobuf/empty.proto";
+
+// Main communication models
+message Algorithm {
+    uint32 id = 1;
+    string name = 2;
+}
+
+message Version {
+    uint32 id = 1;
+    uint32 algorithm_id = 2;
+    string name = 3;
+    
+    message Run {
+        uint32 id = 1;
+        uint32 algorithm_version_id = 2;
+        string keygen = 3;
+        string sign = 4;
+        string verify = 5;
+        uint32 private_key_size = 6;
+        uint32 public_key_size = 7;
+        uint32 signature_size = 8;
+    }
+}
+
+// Request message 
+
+message Request {
+    string name = 1;
+}
+// Response message for listing all algorithms
+message AlgorithmList {
+    repeated Algorithm algorithms = 1;
+}
+
+// Response message for listing all versions of the algorithm
+message AlgorithmVersionList {
+    repeated Version versions = 1;
+}
+
+// Response message for listing all runs of the algorithm version
+message AlgorithmVersionRunList {
+    repeated Version.Run runs = 1;
+}
+
+// CR Service for models
+service AlgorithmService {
+    rpc GetAllAlgorithms (google.protobuf.Empty) returns (AlgorithmList);
+    rpc GetAllAlgVersionByAlgName (Request) returns (AlgorithmVersionList);
+    rpc GetAllAlgRunsByVersion (Request) returns (AlgorithmVersionRunList);
+}
