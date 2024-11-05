@@ -1,4 +1,4 @@
-module pqc_lab/mod
+module github.com/enkaell/pqc_lab
 
 go 1.21.4
 
