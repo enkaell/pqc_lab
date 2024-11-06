@@ -13,7 +13,7 @@ message Version {
     uint32 id = 1;
     uint32 algorithm_id = 2;
     string name = 3;
-    
+    string algorithm_name = 4;
     message Run {
         uint32 id = 1;
         uint32 algorithm_version_id = 2;
