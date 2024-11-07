@@ -4,7 +4,14 @@ import (
 	"database/sql"
 )
 
-func initDatabaseConn() error {
+type Database interface {
+	initDatabaseConn() error
+}
+
+type DB struct {
+}
+
+func (databaseStruct DB) initDatabaseConn() error {
 	db, err := sql.Open("sqlite3", "./algs.db:?_foreign_keys=on")
 	if err != nil {
 		return err

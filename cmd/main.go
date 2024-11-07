@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 
+	"github.com/enkaell/pqc_lab/internals/repository"
 	"github.com/enkaell/pqc_lab/internals/server"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -56,6 +57,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Cannot create listener: %s", err)
 	}
+	var repo repository.Database = repository.DB{}
+	repo, err = repo.initDatabaseConn()
+
 	grpcServer := grpc.NewServer()
 	service := &myAlgorithmServiceServer{}
 	server.RegisterAlgorithmServiceServer(grpcServer, service)
