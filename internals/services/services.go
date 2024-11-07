@@ -1,18 +1,15 @@
 // Isolated business logic
 package services
 
-type AlgorithmPreProcessor interface{
+import (
+	"github.com/enkaell/pqc_lab/internals/server"
+)
+
+type AlgorithmPreProcessor interface {
 	Preprocess() error
 }
 
-func (...) Preprocess() error {
-	} 
+func getAllAlgVersionByAlgName(name string) (*server.AlgorithmVersionList, error) {
 
-type AlgorithmPostProcessor interface{
-	Postprocess() error 
+	return nil, nil
 }
-
-func (...) Postprocess() error {
-
-}
-
