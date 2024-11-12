@@ -25,30 +25,32 @@ func (m *structError) Error() string {
 // Main RPC's signatures
 
 func (s *myAlgorithmServiceServer) GetAllAlgorithms(context.Context, *emptypb.Empty) (*server.AlgorithmList, error) {
-	response := &server.AlgorithmList{Algorithms: []*server.Algorithm{{Id: 1, Name: "Algone"}, {Id: 2, Name: "Algtwo"}, {Id: 3, Name: "Algthree"}}}
+	algorithms, err := repository.DBGetAllAlgorithms()
+	if err != nil {
+		log.Fatal("Database fetching error: ", err)
+
+	}
+	response := &server.AlgorithmList{Algorithms: algorithms}
 	return response, nil
 }
 
 func (s myAlgorithmServiceServer) GetAllAlgVersionByAlgName(ctx context.Context, req *server.Request) (*server.AlgorithmVersionList, error) {
 	fmt.Printf("Res information: %v: \n", req)
-	res := &server.AlgorithmVersionList{Versions: []*server.Version{}}
-	versions := []*server.Version{
-		{Id: 1, AlgorithmId: 1, AlgorithmName: "Algone", Name: "AlgoneVerone"},
-		{Id: 2, AlgorithmId: 1, AlgorithmName: "Algone", Name: "Algonevertwo"},
-		{Id: 3, AlgorithmId: 1, AlgorithmName: "Algone", Name: "Algoneverthree"},
+	versions, err := repository.DBGetGetAllAlgVersionByAlgName(req.GetName())
+	if err != nil {
+		log.Fatal("Database fetching error: ", err)
 	}
-	for _, ver := range versions {
-		if req.Name == ver.AlgorithmName {
-			res.Versions = append(res.Versions, ver)
-		}
-
-	}
-	return res, nil
+	response := &server.AlgorithmVersionList{Versions: versions}
+	return response, nil
 }
 
 func (s myAlgorithmServiceServer) GetAllAlgRunsByVersion(ctx context.Context, req *server.Request) (*server.AlgorithmVersionRunList, error) {
 	fmt.Printf("Res information: %v: \n", req)
-	response := &server.AlgorithmVersionRunList{}
+	runs, err := repository.DBGetAllAlgRunsByVersion(req.GetName())
+	if err != nil {
+		log.Fatal("Database fetching error: ", err)
+	}
+	response := &server.AlgorithmVersionRunList{Runs: runs}
 	return response, nil
 }
 
@@ -57,9 +59,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Cannot create listener: %s", err)
 	}
-	var repo repository.Database = repository.DB{}
-	repo, err = repo.initDatabaseConn()
-
+	database, err := repository.DBInitDatabaseConn()
+	if err != nil {
+		log.Fatalf("Cannot connect to database: %s", err)
+	}
+	defer database.Close()
 	grpcServer := grpc.NewServer()
 	service := &myAlgorithmServiceServer{}
 	server.RegisterAlgorithmServiceServer(grpcServer, service)
