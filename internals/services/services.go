@@ -19,16 +19,17 @@ func (e envError) Error() string {
 	return "Env vars is not set"
 }
 
-func IterateOverAlgsAndRunAlgVers(k int, v *server.Algorithm, output chan<- *server.Algorithm) error {
+func IterateOverAlgVersAndRunAlgs(k int, v *server.Algorithm, output chan<- *server.Algorithm) {
 	BinDir := os.Getenv("BINDIR")
 	if BinDir == "" {
-		return envError{}
+		panic(envError{})
 	}
-	fmt.Println("INSIDE ITERATOR FUNC")
 	for _, element := range v.Versions {
+		fmt.Printf("Algorithm %s version %s execution has started \n", v.Name, element.Name)
 		out, err := exec.Command(filepath.Join(BinDir, v.Name, "pqcsign_"+element.Name)).Output()
 		if err != nil {
-			log.Fatalf("Command execution error: %s \nOutput:  %s \nAlgorithm: %s \n", err, out, element)
+			// Skipping algorithm naming or other inconsistences
+			log.Printf("Command execution error: %s \nOutput:  %s \nAlgorithm: %s \n", err, out, element)
 			continue
 		}
 		outStr := string(out)
@@ -41,7 +42,6 @@ func IterateOverAlgsAndRunAlgVers(k int, v *server.Algorithm, output chan<- *ser
 		}
 		output <- formatedOut
 	}
-	return nil
 }
 
 // O(n^2)
@@ -59,7 +59,7 @@ func RunAlgorithms(algs *server.AlgorithmList, output chan *server.Algorithm) {
 		fmt.Printf("Algorithm %s execution started \n", v.Name)
 		go func(k int, v *server.Algorithm) {
 			defer wg.Done()
-			IterateOverAlgsAndRunAlgVers(k, v, output)
+			IterateOverAlgVersAndRunAlgs(k, v, output)
 		}(k, v)
 
 	}
