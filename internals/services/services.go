@@ -20,27 +20,26 @@ func (e envError) Error() string {
 }
 
 func IterateOverAlgVersAndRunAlgs(k int, v *server.Algorithm, output chan<- *server.Algorithm) {
+	var runs []*server.Algorithm_Version_Run
 	BinDir := os.Getenv("BINDIR")
 	if BinDir == "" {
 		panic(envError{})
 	}
 	for _, element := range v.Versions {
-		fmt.Printf("Algorithm %s version %s execution has started \n", v.Name, element.Name)
+		fmt.Printf("Algorithm %s version %s execution has been started \n", v.Name, element.Name)
 		out, err := exec.Command(filepath.Join(BinDir, v.Name, "pqcsign_"+element.Name)).Output()
 		if err != nil {
 			// Skipping algorithm naming or other inconsistences
 			log.Printf("Command execution error: %s \nOutput:  %s \nAlgorithm: %s \n", err, out, element)
 			continue
 		}
-		outStr := string(out)
-		outParsed := &server.Algorithm_Version_Run{Name: outStr}
-		formatedOut := &server.Algorithm{
-			Id:   1,
-			Name: string(element.Name),
+		outParsed := &server.Algorithm_Version_Run{Name: string(out)}
+		runs := append(runs, outParsed)
+		output <- &server.Algorithm{
+			Name: string(v.Name),
 			Versions: []*server.Algorithm_Version{
-				{Name: element.Name, Runs: []*server.Algorithm_Version_Run{outParsed}}},
+				{Name: element.Name, Runs: runs}},
 		}
-		output <- formatedOut
 	}
 }
 
