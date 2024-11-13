@@ -8,6 +8,7 @@ import (
 
 	"github.com/enkaell/pqc_lab/internals/repository"
 	"github.com/enkaell/pqc_lab/internals/server"
+	"github.com/enkaell/pqc_lab/internals/services"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -25,6 +26,7 @@ func (m *structError) Error() string {
 // Main RPC's signatures
 
 func (s *myAlgorithmServiceServer) GetAllAlgorithms(context.Context, *emptypb.Empty) (*server.AlgorithmList, error) {
+	fmt.Printf("Req information: %v: \n", "Get All Algorithms")
 	algorithms, err := repository.DBGetAllAlgorithms()
 	if err != nil {
 		log.Fatal("Database fetching error: ", err)
@@ -35,7 +37,7 @@ func (s *myAlgorithmServiceServer) GetAllAlgorithms(context.Context, *emptypb.Em
 }
 
 func (s myAlgorithmServiceServer) GetAllAlgVersionByAlgName(ctx context.Context, req *server.Request) (*server.AlgorithmVersionList, error) {
-	fmt.Printf("Res information: %v: \n", req)
+	fmt.Printf("Req information: %v: \n", req)
 	versions, err := repository.DBGetGetAllAlgVersionByAlgName(req.GetName())
 	if err != nil {
 		log.Fatal("Database fetching error: ", err)
@@ -45,13 +47,29 @@ func (s myAlgorithmServiceServer) GetAllAlgVersionByAlgName(ctx context.Context,
 }
 
 func (s myAlgorithmServiceServer) GetAllAlgRunsByVersion(ctx context.Context, req *server.Request) (*server.AlgorithmVersionRunList, error) {
-	fmt.Printf("Res information: %v: \n", req)
+	fmt.Printf("Req information: %v: \n", req)
 	runs, err := repository.DBGetAllAlgRunsByVersion(req.GetName())
 	if err != nil {
 		log.Fatal("Database fetching error: ", err)
 	}
 	response := &server.AlgorithmVersionRunList{Runs: runs}
+	fmt.Println(response)
 	return response, nil
+}
+
+func (s myAlgorithmServiceServer) RunAlgorithms(algs *server.AlgorithmList, stream grpc.ServerStreamingServer[server.AlgorithmList]) error {
+	var algorithms []*server.Algorithm
+	output := make(chan *server.Algorithm, len(algs.Algorithms))
+	services.RunAlgorithms(algs, output)
+	for step := range output {
+		algorithms = append(algorithms, step)
+		fmt.Println("Stream package has been sent")
+		err := stream.Send(&server.AlgorithmList{Algorithms: algorithms})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func main() {

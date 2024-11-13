@@ -23,6 +23,7 @@ const (
 	AlgorithmService_GetAllAlgorithms_FullMethodName          = "/AlgorithmService/GetAllAlgorithms"
 	AlgorithmService_GetAllAlgVersionByAlgName_FullMethodName = "/AlgorithmService/GetAllAlgVersionByAlgName"
 	AlgorithmService_GetAllAlgRunsByVersion_FullMethodName    = "/AlgorithmService/GetAllAlgRunsByVersion"
+	AlgorithmService_RunAlgorithms_FullMethodName             = "/AlgorithmService/RunAlgorithms"
 )
 
 // AlgorithmServiceClient is the client API for AlgorithmService service.
@@ -34,6 +35,7 @@ type AlgorithmServiceClient interface {
 	GetAllAlgorithms(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*AlgorithmList, error)
 	GetAllAlgVersionByAlgName(ctx context.Context, in *Request, opts ...grpc.CallOption) (*AlgorithmVersionList, error)
 	GetAllAlgRunsByVersion(ctx context.Context, in *Request, opts ...grpc.CallOption) (*AlgorithmVersionRunList, error)
+	RunAlgorithms(ctx context.Context, in *AlgorithmList, opts ...grpc.CallOption) (grpc.ServerStreamingClient[AlgorithmList], error)
 }
 
 type algorithmServiceClient struct {
@@ -74,6 +76,25 @@ func (c *algorithmServiceClient) GetAllAlgRunsByVersion(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *algorithmServiceClient) RunAlgorithms(ctx context.Context, in *AlgorithmList, opts ...grpc.CallOption) (grpc.ServerStreamingClient[AlgorithmList], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &AlgorithmService_ServiceDesc.Streams[0], AlgorithmService_RunAlgorithms_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[AlgorithmList, AlgorithmList]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type AlgorithmService_RunAlgorithmsClient = grpc.ServerStreamingClient[AlgorithmList]
+
 // AlgorithmServiceServer is the server API for AlgorithmService service.
 // All implementations must embed UnimplementedAlgorithmServiceServer
 // for forward compatibility.
@@ -83,6 +104,7 @@ type AlgorithmServiceServer interface {
 	GetAllAlgorithms(context.Context, *emptypb.Empty) (*AlgorithmList, error)
 	GetAllAlgVersionByAlgName(context.Context, *Request) (*AlgorithmVersionList, error)
 	GetAllAlgRunsByVersion(context.Context, *Request) (*AlgorithmVersionRunList, error)
+	RunAlgorithms(*AlgorithmList, grpc.ServerStreamingServer[AlgorithmList]) error
 	mustEmbedUnimplementedAlgorithmServiceServer()
 }
 
@@ -101,6 +123,9 @@ func (UnimplementedAlgorithmServiceServer) GetAllAlgVersionByAlgName(context.Con
 }
 func (UnimplementedAlgorithmServiceServer) GetAllAlgRunsByVersion(context.Context, *Request) (*AlgorithmVersionRunList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllAlgRunsByVersion not implemented")
+}
+func (UnimplementedAlgorithmServiceServer) RunAlgorithms(*AlgorithmList, grpc.ServerStreamingServer[AlgorithmList]) error {
+	return status.Errorf(codes.Unimplemented, "method RunAlgorithms not implemented")
 }
 func (UnimplementedAlgorithmServiceServer) mustEmbedUnimplementedAlgorithmServiceServer() {}
 func (UnimplementedAlgorithmServiceServer) testEmbeddedByValue()                          {}
@@ -177,6 +202,17 @@ func _AlgorithmService_GetAllAlgRunsByVersion_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AlgorithmService_RunAlgorithms_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(AlgorithmList)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(AlgorithmServiceServer).RunAlgorithms(m, &grpc.GenericServerStream[AlgorithmList, AlgorithmList]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type AlgorithmService_RunAlgorithmsServer = grpc.ServerStreamingServer[AlgorithmList]
+
 // AlgorithmService_ServiceDesc is the grpc.ServiceDesc for AlgorithmService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -197,6 +233,12 @@ var AlgorithmService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AlgorithmService_GetAllAlgRunsByVersion_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "RunAlgorithms",
+			Handler:       _AlgorithmService_RunAlgorithms_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "server.proto",
 }

@@ -87,8 +87,8 @@ func DBGetAllAlgorithms() ([]*server.Algorithm, error) {
 	return algorithms, nil
 }
 
-func DBGetGetAllAlgVersionByAlgName(algorithm_name string) ([]*server.Version, error) {
-	var versions []*server.Version
+func DBGetGetAllAlgVersionByAlgName(algorithm_name string) ([]*server.Algorithm_Version, error) {
+	var versions []*server.Algorithm_Version
 
 	rows, err := db.Query(`SELECT v.id, v.name from algorithms a, algorithm_versions v where  a.id = v.algorithm_id and a.name=?;`, algorithm_name)
 	if err != nil {
@@ -97,7 +97,7 @@ func DBGetGetAllAlgVersionByAlgName(algorithm_name string) ([]*server.Version, e
 	defer rows.Close()
 
 	for rows.Next() {
-		ver := &server.Version{}
+		ver := &server.Algorithm_Version{}
 		if err := rows.Scan(&ver.Id, &ver.Name); err != nil {
 			return nil, err
 		}
@@ -111,18 +111,19 @@ func DBGetGetAllAlgVersionByAlgName(algorithm_name string) ([]*server.Version, e
 	return versions, nil
 }
 
-func DBGetAllAlgRunsByVersion(version_name string) ([]*server.Version_Run, error) {
-	var version_runs []*server.Version_Run
+func DBGetAllAlgRunsByVersion(version_name string) ([]*server.Algorithm_Version_Run, error) {
+	var version_runs []*server.Algorithm_Version_Run
 
-	rows, err := db.Query(`SELECT r.* from algorithm_version_runs r, algorithm_versions v where  v.id = r.algorithm_version_id and v.name=?;`, version_name)
+	rows, err := db.Query(`SELECT r.id, r.name, r.keygen, r.sign, r.verify, r.private_key_size, r.public_key_size, r.signature_size
+	 from algorithm_version_runs r, algorithm_versions v where  v.id = r.algorithm_version_id and v.name=?;`, version_name)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		runs := &server.Version_Run{}
-		if err := rows.Scan(&runs.Id, &runs.AlgorithmVersionId, &runs.Keygen, &runs.Keygen, &runs.Sign,
+		runs := &server.Algorithm_Version_Run{}
+		if err := rows.Scan(&runs.Id, &runs.Name, &runs.Keygen, &runs.Sign,
 			&runs.Verify, &runs.PrivateKeySize, &runs.PublicKeySize, &runs.SignatureSize); err != nil {
 			return nil, err
 		}

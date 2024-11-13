@@ -7,28 +7,31 @@ import "google/protobuf/empty.proto";
 message Algorithm {
     uint32 id = 1;
     string name = 2;
-}
+    repeated Version versions = 3; 
 
-message Version {
-    uint32 id = 1;
-    string name = 2;
-    message Run {
+    message Version {
         uint32 id = 1;
-        uint32 algorithm_version_id = 2;
-        string keygen = 3;
-        string sign = 4;
-        string verify = 5;
-        uint32 private_key_size = 6;
-        uint32 public_key_size = 7;
-        uint32 signature_size = 8;
+        string name = 2;
+        repeated Run runs = 3;
+
+        message Run {
+            uint32 id = 1;
+            string name = 2;
+            string keygen = 3;
+            string sign = 4;
+            string verify = 5;
+            uint32 private_key_size = 6;
+            uint32 public_key_size = 7;
+            uint32 signature_size = 8;
+        }
     }
 }
 
-// Request message 
-
+// Request message
 message Request {
     string name = 1;
 }
+
 // Response message for listing all algorithms
 message AlgorithmList {
     repeated Algorithm algorithms = 1;
@@ -36,12 +39,12 @@ message AlgorithmList {
 
 // Response message for listing all versions of the algorithm
 message AlgorithmVersionList {
-    repeated Version versions = 1;
+    repeated Algorithm.Version versions = 1;
 }
 
 // Response message for listing all runs of the algorithm version
 message AlgorithmVersionRunList {
-    repeated Version.Run runs = 1;
+    repeated Algorithm.Version.Run runs = 1;
 }
 
 // CR Service for models
@@ -49,4 +52,5 @@ service AlgorithmService {
     rpc GetAllAlgorithms (google.protobuf.Empty) returns (AlgorithmList);
     rpc GetAllAlgVersionByAlgName (Request) returns (AlgorithmVersionList);
     rpc GetAllAlgRunsByVersion (Request) returns (AlgorithmVersionRunList);
+    rpc RunAlgorithms (AlgorithmList) returns (stream AlgorithmList);
 }
