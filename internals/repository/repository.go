@@ -136,3 +136,54 @@ func DBGetAllAlgRunsByVersion(version_name string) ([]*server.Algorithm_Version_
 
 	return version_runs, nil
 }
+
+func DBPrepareAndRunStatementTransaction(vers []*server.Algorithm_Version_Run) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback() //  The rollback will be ignored if the tx has been committed later in the function
+
+	stmt, err := tx.Prepare("INSERT INTO algorithm_version_runs(name, keygen, sign, verify, private_key_size, public_key_size, signature_size) VALUES( ?, ?, ?, ?, ?, ?, ? )")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close() // Prepared statements take up server resources and should be closed after use
+
+	for _, ver := range vers {
+		if _, err := stmt.Exec(ver.Name, ver.Keygen, ver.Sign, ver.Verify, ver.PrivateKeySize, ver.PublicKeySize, ver.SignatureSize); err != nil {
+			return err
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	return nil
+
+}
+
+// #TODO: Database transaction flow - ?
+// func DBWriteRunResults(algs *server.AlgorithmList) error {
+
+// 	_, err := db.Exec(`INSERT INTO algorithms (name) VALUES (?)`, algs.Algorithms...)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to batch insert algorithms: %w", err)
+// 	}
+
+// 	// Batch insert algorithm_versions
+// 	_, err = db.Exec(`INSERT INTO algorithm_versions (algorithm_id, name) VALUES (?, ?)`, algs.Algorithms...)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to batch insert versions: %w", err)
+// 	}
+
+// 	// Batch insert algorithm_version_runs
+// 	_, err = db.Exec(`INSERT INTO algorithm_version_runs
+//         (algorithm_version_id, name, keygen, sign, verify, private_key_size, public_key_size, signature_size)
+//         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, runsValues...)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to batch insert runs: %w", err)
+// 	}
+
+// 	return nil
+
+// }

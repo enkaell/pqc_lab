@@ -58,13 +58,18 @@ func (s myAlgorithmServiceServer) GetAllAlgRunsByVersion(ctx context.Context, re
 }
 
 func (s myAlgorithmServiceServer) RunAlgorithms(algs *server.AlgorithmList, stream grpc.ServerStreamingServer[server.AlgorithmList]) error {
-	var algorithms []*server.Algorithm
-	output := make(chan *server.Algorithm, len(algs.Algorithms))
+	var totalVersionsCount int
+	for _, v := range algs.Algorithms {
+		totalVersionsCount += len(v.Versions)
+	}
+
+	// Buffered channel of all the versions for each algorithm
+	output := make(chan *server.Algorithm, totalVersionsCount)
 	services.RunAlgorithms(algs, output)
+
+	// Send each algorithm individually over the stream
 	for step := range output {
-		algorithms = append(algorithms, step)
-		fmt.Println("Stream package has been sent")
-		err := stream.Send(&server.AlgorithmList{Algorithms: algorithms})
+		err := stream.Send(&server.AlgorithmList{Algorithms: []*server.Algorithm{step}})
 		if err != nil {
 			return err
 		}
